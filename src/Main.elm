@@ -34,6 +34,22 @@ type alias Snake =
     List Pixel
 
 
+duplicatePixel : Direction -> Pixel -> Pixel
+duplicatePixel direction pixel =
+    case direction of
+        Up ->
+            { x = pixel.x, y = pixel.y + 1 }
+
+        Down ->
+            { x = pixel.x, y = pixel.y + 1 }
+
+        Right ->
+            { x = pixel.x, y = pixel.y + 1 }
+
+        Left ->
+            { x = pixel.x, y = pixel.y + 1 }
+
+
 type alias Model =
     { snake : Snake
     , direction : Direction
@@ -59,8 +75,8 @@ type alias Msg =
     Direction
 
 
-updateSnake : Snake -> Direction -> Snake
-updateSnake snake direction =
+updateSnake : Direction -> Snake -> Snake
+updateSnake direction snake =
     case snake of
         [] ->
             []
@@ -75,23 +91,11 @@ updateSnake snake direction =
                     []
 
                 Just tailPixel ->
-                    case direction of
-                        Up ->
-                            List.append (head :: tail) [ { x = tailPixel.x, y = tailPixel.y + 1 } ]
-
-                        Down ->
-                            List.append (head :: tail) [ { x = tailPixel.x, y = tailPixel.y - 1 } ]
-
-                        Right ->
-                            List.append (head :: tail) [ { x = tailPixel.x + 1, y = tailPixel.y } ]
-
-                        Left ->
-                            List.append (head :: tail) [ { x = tailPixel.x - 1, y = tailPixel.y + 1 } ]
+                    List.append (head :: tail) [ duplicatePixel direction tailPixel ]
 
 
-update : Msg -> Model -> Model
 update msg model =
-    { direction = msg, snake = updateSnake model.snake msg }
+    { model | direction = msg, snake = updateSnake msg model.snake }
 
 
 
