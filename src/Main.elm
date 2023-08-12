@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
+import Time
 
 
 
@@ -10,7 +11,7 @@ import Html.Events exposing (onClick)
 
 
 main =
-    Browser.sandbox { init = init, update = update, view = view }
+    Browser.element { init = init, view = view, update = update, subscriptions = subscriptions }
 
 
 
@@ -34,20 +35,20 @@ type alias Snake =
     List Pixel
 
 
-duplicatePixel : Direction -> Pixel -> Pixel
-duplicatePixel direction pixel =
+nextPixel : Direction -> Pixel -> Pixel
+nextPixel direction pixel =
     case direction of
         Up ->
             { x = pixel.x, y = pixel.y + 1 }
 
         Down ->
-            { x = pixel.x, y = pixel.y + 1 }
+            { x = pixel.x, y = pixel.y - 1 }
 
         Right ->
-            { x = pixel.x, y = pixel.y + 1 }
+            { x = pixel.x + 1, y = pixel.y }
 
         Left ->
-            { x = pixel.x, y = pixel.y + 1 }
+            { x = pixel.x - 1, y = pixel.y }
 
 
 type alias Model =
@@ -56,28 +57,31 @@ type alias Model =
     }
 
 
-init : Model
-init =
-    { snake =
-        [ { x = 5, y = 5 }
-        , { x = 6, y = 6 }
-        , { x = 7, y = 5 }
-        ]
-    , direction = Right
-    }
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { snake =
+            [ { x = 5, y = 5 }
+            , { x = 6, y = 6 }
+            , { x = 7, y = 5 }
+            ]
+      , direction = Right
+      }
+    , Cmd.none
+    )
 
 
 
 -- UPDATE
 
 
-type alias Msg =
-    Direction
+type Msg
+    = Key Direction
+    | Tick Time.Posix
 
 
-updateSnake : Direction -> Snake -> Snake
-updateSnake direction snake =
-    case snake of
+updateSnake : Model -> Snake
+updateSnake model =
+    case model.snake of
         [] ->
             []
 
@@ -91,11 +95,30 @@ updateSnake direction snake =
                     []
 
                 Just tailPixel ->
-                    List.append (head :: tail) [ duplicatePixel direction tailPixel ]
+                    List.append (head :: tail) [ nextPixel model.direction tailPixel ]
 
 
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    { model | direction = msg, snake = updateSnake msg model.snake }
+    case msg of
+        Key direction ->
+            ( { model | direction = direction }
+            , Cmd.none
+            )
+
+        Tick _ ->
+            ( { model | snake = updateSnake model }
+            , Cmd.none
+            )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Time.every 1000 Tick
 
 
 
@@ -106,9 +129,9 @@ view : Model -> Html Msg
 view model =
     div []
         [ div [] [ text (List.foldr (\x a -> "{ " ++ String.fromInt x.x ++ ", " ++ String.fromInt x.y ++ "}, " ++ a) "" model.snake) ]
-        , button [ onClick Up ] [ text "⬆️" ]
+        , button [ onClick (Key Up) ] [ text "⬆️" ]
         , div [] []
-        , button [ onClick Left ] [ text "⬅️" ]
-        , button [ onClick Down ] [ text "⬇️" ]
-        , button [ onClick Right ] [ text "➡️" ]
+        , button [ onClick (Key Left) ] [ text "⬅️" ]
+        , button [ onClick (Key Down) ] [ text "⬇️" ]
+        , button [ onClick (Key Right) ] [ text "➡️" ]
         ]
