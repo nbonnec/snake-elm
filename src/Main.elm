@@ -35,20 +35,24 @@ type alias Snake =
     List Pixel
 
 
+maxLength =
+    20
+
+
 nextPixel : Direction -> Pixel -> Pixel
 nextPixel direction pixel =
     case direction of
         Up ->
-            { x = pixel.x, y = pixel.y + 1 }
+            { x = pixel.x, y = min (pixel.y + 1) maxLength }
 
         Down ->
-            { x = pixel.x, y = pixel.y - 1 }
+            { x = pixel.x, y = max (pixel.y - 1) 0 }
 
         Right ->
-            { x = pixel.x + 1, y = pixel.y }
+            { x = min (pixel.x + 1) maxLength, y = pixel.y }
 
         Left ->
-            { x = pixel.x - 1, y = pixel.y }
+            { x = max (pixel.x - 1) 0, y = pixel.y }
 
 
 type alias Model =
@@ -76,7 +80,22 @@ init _ =
 
 type Msg
     = Key Direction
+    | Apple
     | Tick Time.Posix
+
+
+addOnePixel : Snake -> Direction -> Snake
+addOnePixel snake direction =
+    let
+        tailRecord =
+            List.head (List.reverse snake)
+    in
+    case tailRecord of
+        Nothing ->
+            []
+
+        Just tailPixel ->
+            List.append snake [ nextPixel direction tailPixel ]
 
 
 updateSnake : Model -> Snake
@@ -85,26 +104,34 @@ updateSnake model =
         [] ->
             []
 
-        head :: tail ->
-            let
-                tailRecord =
-                    List.head (List.reverse tail)
-            in
-            case tailRecord of
-                Nothing ->
-                    []
-
-                Just tailPixel ->
-                    List.append (head :: tail) [ nextPixel model.direction tailPixel ]
+        _ :: tail ->
+            addOnePixel tail model.direction
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Key direction ->
-            ( { model | direction = direction }
-            , Cmd.none
-            )
+        Key newDirection ->
+            case ( newDirection, model.direction ) of
+                ( Up, Down ) ->
+                    ( model, Cmd.none )
+
+                ( Down, Up ) ->
+                    ( model, Cmd.none )
+
+                ( Left, Right ) ->
+                    ( model, Cmd.none )
+
+                ( Right, Left ) ->
+                    ( model, Cmd.none )
+
+                ( _, _ ) ->
+                    ( { model | direction = newDirection }
+                    , Cmd.none
+                    )
+
+        Apple ->
+            ( { model | snake = addOnePixel model.snake model.direction }, Cmd.none )
 
         Tick _ ->
             ( { model | snake = updateSnake model }
@@ -134,4 +161,5 @@ view model =
         , button [ onClick (Key Left) ] [ text "⬅️" ]
         , button [ onClick (Key Down) ] [ text "⬇️" ]
         , button [ onClick (Key Right) ] [ text "➡️" ]
+        , button [ onClick Apple ] [ text "🍎️" ]
         ]
