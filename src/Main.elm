@@ -3,6 +3,8 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
+import Svg
+import Svg.Attributes as Attr
 import Time
 
 
@@ -11,7 +13,8 @@ import Time
 
 
 main =
-    Browser.element { init = init, view = view, update = update, subscriptions = subscriptions }
+    Browser.element
+        { init = init, view = view, update = update, subscriptions = subscriptions }
 
 
 
@@ -72,6 +75,30 @@ init _ =
       }
     , Cmd.none
     )
+
+
+
+-- STYLE
+
+
+background : Html msg
+background =
+    Svg.svg
+        [ Attr.viewBox "0 0 400 400"
+        , Attr.width "400"
+        , Attr.height "400"
+        ]
+        [ Svg.rect
+            [ Attr.x "0"
+            , Attr.y "0"
+            , Attr.width "400"
+            , Attr.height "400"
+            , Attr.fill "green"
+            , Attr.stroke "black"
+            , Attr.strokeWidth "2"
+            ]
+            []
+        ]
 
 
 
@@ -155,7 +182,8 @@ subscriptions _ =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [] [ text (List.foldr (\x a -> "{ " ++ String.fromInt x.x ++ ", " ++ String.fromInt x.y ++ "}, " ++ a) "" model.snake) ]
+        [ background
+        , div [] [ text (List.foldr (\x a -> "{ " ++ String.fromInt x.x ++ ", " ++ String.fromInt x.y ++ "}, " ++ a) "" model.snake) ]
         , button [ onClick (Key Up) ] [ text "⬆️" ]
         , div [] []
         , button [ onClick (Key Left) ] [ text "⬅️" ]
